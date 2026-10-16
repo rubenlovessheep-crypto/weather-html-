@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Skyline — Weather</title>
+<meta name="description" content="A simple weather app powered by Open-Meteo, with your location or any city." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='%23f6c453'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://api.fontshare.com" />
+<link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@500,700&f[]=satoshi@400,500,700&display=swap" rel="stylesheet" />
+<style>
+  :root,
+  [data-theme="light"] {
+    --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+    --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+    --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+    --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+    --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+    --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem;
+    --space-4: 1rem; --space-5: 1.25rem; --space-6: 1.5rem;
+    --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem; --space-16: 4rem;
+    --radius-sm: 0.375rem; --radius-md: 0.5rem;
+    --radius-lg: 0.75rem; --radius-xl: 1rem; --radius-full: 9999px;
+    --transition-interactive: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+
+    --font-display: "Cabinet Grotesk", "Avenir Next", sans-serif;
+    --font-body: "Satoshi", "Segoe UI", sans-serif;
+
+    --color-bg: #f4f3ef;
+    --color-surface: #fbfaf7;
+    --color-surface-offset: #eae7e0;
+    --color-divider: #ddd9d1;
+    --color-border: #cfcac1;
+    --color-text: #26241d;
+    --color-text-muted: #6f6e66;
+    --color-text-faint: #a9a89f;
+    --color-text-inverse: #fbfaf7;
+    --color-accent: #1c5f68;
+    --color-accent-hover: #124a52;
+    --color-card-overlay: rgba(255, 255, 255, 0.55);
+
+    --hero-1: #a8c8d8;
+    --hero-2: #e8d9b8;
+    --hero-3: #f4ede0;
+    --shadow-lg: 0 12px 32px rgba(38, 36, 29, 0.12);
+  }
+  [data-theme="dark"] {
+    --color-bg: #131417;
+    --color-surface: #1b1c20;
+    --color-surface-offset: #232429;
+    --color-divider: #2b2c32;
+    --color-border: #3a3b42;
+    --color-text: #d8d6cd;
+    --color-text-muted: #8c8b83;
+    --color-text-faint: #5c5b55;
+    --color-text-inverse: #131417;
+    --color-accent: #6fc2cd;
+    --color-accent-hover: #9ad6de;
+    --color-card-overlay: rgba(19, 20, 23, 0.45);
+
+    --hero-1: #1c2733;
+    --hero-2: #2c3138;
+    --hero-3: #34302b;
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  *,
+  *::before,
+  *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html {
+    -webkit-text-size-adjust: none; text-size-adjust: none;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    min-height: 100dvh;
+    line-height: 1.6;
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    color: var(--color-text);
+    background-color: var(--color-bg);
+  }
+
+  [hidden] { display: none !important; }
+
+  img, svg { display: block; max-width: 100%; height: auto; }
+  input, button { font: inherit; color: inherit; }
+  button { cursor: pointer; background: none; border: none; }
+  h1, h2, h3 { text-wrap: balance; line-height: 1.15; font-family: var(--font-display); }
+  p { text-wrap: pretty; }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+    border-radius: var(--radius-sm);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px;
+    margin: -1px; overflow: hidden;
+    clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; padding: 0;
+  }
+
+  /* ---------- Sky hero ---------- */
+  .hero {
+    position: relative;
+    padding: var(--space-10) var(--space-6) var(--space-12);
+    background:
+      radial-gradient(120% 120% at 85% -10%, var(--hero-3) 0%, transparent 55%),
+      radial-gradient(140% 110% at 10% 0%, var(--hero-2) 0%, transparent 50%),
+      linear-gradient(180deg, var(--hero-1) 0%, var(--color-bg) 100%);
+    border-bottom: 1px solid var(--color-divider);
+  }
+
+  .wrap {
+    max-width: var(--content-wide, 960px);
+    margin-inline: auto;
+  }
+
+  .hero-inner { display: flex; flex-direction: column; gap: var(--space-8); }
+
+  .brand-row {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+  }
+
+  .brand {
+    display: flex; align-items: center; gap: var(--space-3);
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+  .brand svg { width: 28px; height: 28px; flex: none; }
+
+  .unit-toggle {
+    display: flex; align-items: center;
+    background: var(--color-card-overlay);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    padding: 2px;
+    font-size: var(--text-sm);
+    font-weight: 500;
+  }
+  .unit-toggle button {
+    padding: var(--space-1) var(--space-4);
+    border-radius: var(--radius-full);
+    color: var(--color-text-muted);
+    transition: color var(--transition-interactive), background var(--transition-interactive);
+  }
+  .unit-toggle button[aria-pressed="true"] {
+    background: var(--color-accent);
+    color: var(--color-text-inverse);
+  }
+  .unit-toggle button:focus-visible { outline-offset: 1px; }
+
+  /* ---------- Search ---------- */
+  .search-panel { display: flex; flex-direction: column; gap: var(--space-4); }
+
+  .search-row {
+    display: flex; flex-wrap: wrap; gap: var(--space-3);
+  }
+
+  .search-box {
+    position: relative; flex: 1 1 260px; min-width: 220px;
+  }
+
+  .search-box input {
+    width: 100%;
+    padding: var(--space-3) var(--space-4) var(--space-3) var(--space-10);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    transition: border-color var(--transition-interactive), box-shadow var(--transition-interactive);
+  }
+  .search-box input::placeholder { color: var(--color-text-faint); }
+  .search-box input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent);
+  }
+  .search-box > svg {
+    position: absolute; left: var(--space-4); top: 50%;
+    width: 18px; height: 18px;
+    transform: translateY(-50%);
+    color: var(--color-text-faint);
+    pointer-events: none;
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: var(--space-2);
+    padding: var(--space-3) var(--space-5);
+    background: var(--color-accent);
+    color: var(--color-text-inverse);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    white-space: nowrap;
+    transition: background var(--transition-interactive), transform var(--transition-interactive);
+  }
+  .btn:hover { background: var(--color-accent-hover); }
+  .btn:active { transform: scale(0.98); }
+  .btn svg { width: 17px; height: 17px; flex: none; }
+  .btn[disabled] { opacity: 0.6; cursor: wait; }
+
+  .suggestions {
+    position: absolute; top: calc(100% + var(--space-2)); left: 0; right: 0;
+    z-index: 20;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    display: none;
+  }
+  .suggestions.open { display: block; }
+  .suggestions li + li { border-top: 1px solid var(--color-divider); }
+  .suggestions button {
+    display: flex; flex-direction: column; gap: 2px;
+    width: 100%; text-align: left;
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-sm);
+    transition: background var(--transition-interactive);
+  }
+  .suggestions button:hover, .suggestions button:focus-visible { background: var(--color-surface-offset); }
+  .suggestions .place-sub { color: var(--color-text-muted); font-size: var(--text-xs); }
+
+  .status {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    min-height: 1.5em;
+  }
+  .status.error { color: var(--color-accent); font-weight: 500; }
+
+  /* ---------- Main layout ---------- */
+  main {
+    padding: var(--space-10) var(--space-6) var(--space-16);
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-6);
+  }
+  @media (max-width: 720px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .card {
+    min-width: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Current weather */
+  .current { display: flex; flex-direction: column; gap: var(--space-6); }
+  .current-top {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4);
+  }
+  .current-place { display: flex; flex-direction: column; gap: 2px; }
+  .current-place h1 { font-size: var(--text-xl); font-weight: 700; }
+  .current-place .local-time { font-size: var(--text-sm); color: var(--color-text-muted); }
+  .current-icon { width: 72px; height: 72px; color: var(--color-accent); flex: none; }
+
+  .current-main {
+    display: flex; align-items: center; gap: var(--space-6);
+    flex-wrap: wrap;
+  }
+  .current-temp {
+    font-family: var(--font-display);
+    font-size: clamp(3.5rem, 2rem + 6vw, 5.5rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .current-desc {
+    display: flex; flex-direction: column; gap: var(--space-1);
+    font-size: var(--text-lg);
+    font-weight: 500;
+  }
+  .current-desc .feels { font-size: var(--text-sm); color: var(--color-text-muted); font-weight: 400; }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr));
+    gap: var(--space-4);
+  }
+  .metric {
+    display: flex; flex-direction: column; gap: var(--space-1);
+    padding: var(--space-4);
+    background: var(--color-surface-offset);
+    border-radius: var(--radius-lg);
+  }
+  .metric-label {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+    font-weight: 500;
+  }
+  .metric-value { font-size: var(--text-lg); font-weight: 700; font-family: var(--font-display); }
+  .metric-value small { font-size: 0.6em; font-weight: 500; color: var(--color-text-muted); margin-left: 2px; }
+
+  /* Forecast */
+  .forecast-card { display: flex; flex-direction: column; gap: var(--space-6); }
+
+  .hourly-scroll {
+    display: flex; gap: var(--space-4);
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: var(--space-2);
+    scrollbar-width: thin;
+  }
+  .hour-item {
+    display: flex; flex-direction: column; align-items: center; gap: var(--space-2);
+    flex: none;
+    padding: var(--space-4) var(--space-3);
+    background: var(--color-surface-offset);
+    border-radius: var(--radius-lg);
+    min-width: 76px;
+  }
+  .hour-item.now { background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface-offset)); }
+  .hour-time { font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 500; }
+  .hour-item .w-icon { width: 28px; height: 28px; color: var(--color-accent); }
+  .hour-temp { font-size: var(--text-sm); font-weight: 700; font-family: var(--font-display); }
+
+  .daily { display: flex; flex-direction: column; }
+  .day-row {
+    display: grid;
+    grid-template-columns: 92px 34px 1fr 110px;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-2);
+    border-top: 1px solid var(--color-divider);
+    font-size: var(--text-sm);
+  }
+  .day-row:first-child { border-top: none; }
+  .day-name { font-weight: 500; }
+  .day-row .w-icon { width: 26px; height: 26px; color: var(--color-accent); }
+
+  .temp-track {
+    position: relative;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background: var(--color-surface-offset);
+    overflow: hidden;
+  }
+  .temp-fill {
+    position: absolute; top: 0; bottom: 0;
+    border-radius: var(--radius-full);
+    background: linear-gradient(in oklab, var(--color-accent), #d98e2b);
+  }
+  .day-temps {
+    text-align: right;
+    display: flex; flex-direction: column;
+    line-height: 1.3;
+  }
+  .day-temps .min { color: var(--color-text-muted); font-size: var(--text-xs); }
+  @media (max-width: 480px) {
+    .day-row { grid-template-columns: 70px 28px 1fr 92px; gap: var(--space-2); }
+  }
+
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    gap: var(--space-4); text-align: center;
+    padding: var(--space-8) var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+  .empty-state .w-icon { width: 40px; height: 40px; color: var(--color-accent); }
+
+  /* Skeleton */
+  .skeleton {
+    display: flex; flex-direction: column; gap: var(--space-4);
+  }
+  .skeleton .bar {
+    height: 18px; border-radius: var(--radius-full);
+    background: linear-gradient(90deg,
+      var(--color-surface-offset) 25%,
+      var(--color-divider) 50%,
+      var(--color-surface-offset) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.2s infinite linear;
+  }
+  .skeleton .bar.w60 { width: 60%; }
+  .skeleton .bar.w40 { width: 40%; }
+  .skeleton .bar.h64 { height: 64px; border-radius: var(--radius-lg); }
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+
+  /* Footer */
+  footer {
+    padding: var(--space-6);
+    text-align: center;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+  footer a {
+    color: var(--color-accent);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap hero-inner">
+      <div class="brand-row">
+        <div class="brand">
+          <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <circle cx="13" cy="13" r="7" fill="var(--color-accent)" opacity="0.85"/>
+            <path d="M10 24a6 6 0 0 1 11.2-3A4.5 4.5 0 1 1 22 29H10a5 5 0 0 1 0-10z" fill="var(--color-text)" opacity="0.7"/>
+          </svg>
+          Skyline
+        </div>
+        <div class="unit-toggle" role="group" aria-label="Temperature units">
+          <button type="button" id="unit-c" aria-pressed="true">°C</button>
+          <button type="button" id="unit-f" aria-pressed="false">°F</button>
+        </div>
+      </div>
+
+      <section class="search-panel" aria-label="Find a location">
+        <div class="search-row">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+            <input type="search" id="city-input" placeholder="Search a city…" autocomplete="off"
+                   aria-label="Search for a city" role="combobox" aria-expanded="false"
+                   aria-controls="suggestions" />
+            <ul class="suggestions" id="suggestions" role="listbox" aria-label="City suggestions"></ul>
+          </div>
+          <button type="button" class="btn" id="locate-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 3 3 10.5l6.6 2.9L12.5 20 21 3z"/>
+            </svg>
+            Use my location
+          </button>
+        </div>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap layout">
+      <section class="card current" id="current-card" aria-label="Current weather">
+        <div class="empty-state" id="empty-state">
+          <svg viewBox="0 0 26 26" class="w-icon" aria-hidden="true"><circle cx="13" cy="13" r="4.2" fill="currentColor"/><g stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M13 2.5v2.4M13 19.1v2.4M2.5 13h2.4M19.1 13h2.4M4.8 4.8l1.7 1.7M17.5 17.5l1.7 1.7M19.2 4.8l-1.7 1.7M6.5 17.5l-1.7 1.7"/></g></svg>
+          <p>Search for a city or tap <strong>Use my location</strong> to see the weather.</p>
+        </div>
+        <div class="skeleton" id="initial-placeholder" hidden>
+          <div class="bar w60"></div>
+          <div class="bar h64"></div>
+          <div class="bar w40"></div>
+        </div>
+        <div id="current-content" hidden></div>
+      </section>
+      <section class="card forecast-card" aria-label="Forecast">
+        <div class="empty-state" id="forecast-empty">
+          <p>The 24-hour and 7-day outlook will appear here.</p>
+        </div>
+        <div class="skeleton" id="forecast-placeholder" hidden>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar w60"></div>
+          <div class="bar w40"></div>
+        </div>
+        <div id="forecast-content" hidden></div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> ·
+    City search data from <a href="https://www.geonames.org/" target="_blank" rel="noopener">GeoNames</a>
+  </footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------- State ---------------- */
+  let units = "metric";            // "metric" (°C, km/h) or "imperial" (°F, mph)
+  let selected = null;             // { name, admin, country, lat, lon, timezone }
+  let requestId = 0;               // race-condition guard
+  let debounceTimer = null;
+  let suggestionSeq = 0;
+
+  const $ = (id) => document.getElementById(id);
+  const statusEl = $("status");
+  const input = $("city-input");
+  const suggestionsEl = $("suggestions");
+
+  /* ---------------- WMO weather codes ---------------- */
+  const WMO = {
+    0:  { label: "Clear sky",            icon: "clear" },
+    1:  { label: "Mainly clear",         icon: "clear" },
+    2:  { label: "Partly cloudy",        icon: "partly" },
+    3:  { label: "Overcast",             icon: "cloudy" },
+    45: { label: "Fog",                  icon: "fog" },
+    48: { label: "Freezing fog",         icon: "fog" },
+    51: { label: "Light drizzle",        icon: "drizzle" },
+    53: { label: "Drizzle",              icon: "drizzle" },
+    55: { label: "Dense drizzle",        icon: "drizzle" },
+    56: { label: "Freezing drizzle",     icon: "drizzle" },
+    57: { label: "Freezing drizzle",     icon: "drizzle" },
+    61: { label: "Light rain",           icon: "rain" },
+    63: { label: "Rain",                 icon: "rain" },
+    65: { label: "Heavy rain",           icon: "rain" },
+    66: { label: "Freezing rain",        icon: "rain" },
+    67: { label: "Freezing rain",        icon: "rain" },
+    71: { label: "Light snow",           icon: "snow" },
+    73: { label: "Snow",                 icon: "snow" },
+    75: { label: "Heavy snow",           icon: "snow" },
+    77: { label: "Snow grains",          icon: "snow" },
+    80: { label: "Light showers",        icon: "rain" },
+    81: { label: "Showers",              icon: "rain" },
+    82: { label: "Violent showers",      icon: "rain" },
+    85: { label: "Snow showers",         icon: "snow" },
+    86: { label: "Snow showers",         icon: "snow" },
+    95: { label: "Thunderstorm",         icon: "storm" },
+    96: { label: "Storm with hail",      icon: "storm" },
+    99: { label: "Storm with hail",      icon: "storm" }
+  };
+  const describeCode = (code) => WMO[code] || { label: "Unknown", icon: "cloudy" };
+
+  /* Sky tint per condition for the hero background */
+  const THEMES = {
+    clear:    ["#7fb8d8", "#f0dcae", "#f6efdd"],
+    partly:   ["#93b7c6", "#e3d6bd", "#f2ede2"],
+    cloudy:   ["#9aa4ac", "#c9c8bf", "#e9e8e1"],
+    fog:      ["#a9adb2", "#cfcfc9", "#e9e9e4"],
+    drizzle:  ["#8fa3b0", "#bcc4c9", "#e2e5e3"],
+    rain:     ["#6e8291", "#a9b4ba", "#d9dde0"],
+    snow:     ["#a5b8c6", "#d8e2ea", "#eef3f6"],
+    storm:    ["#4c5561", "#7b828c", "#b9bcc0"]
+  };
+  const DARK_THEMES = {
+    clear:    ["#1d2b3a", "#2a3140", "#3a3730"],
+    partly:   ["#20242b", "#2c2e33", "#37342e"],
+    cloudy:   ["#25272b", "#313236", "#3a3936"],
+    fog:      ["#282a2d", "#34363a", "#3d3d3a"],
+    drizzle:  ["#1f262c", "#2b3238", "#353a3c"],
+    rain:     ["#1a2027", "#262c33", "#31353a"],
+    snow:     ["#1e2731", "#2b3640", "#39424b"],
+    storm:    ["#16181c", "#22242a", "#2c2c30"]
+  };
+
+  /* ---------------- Icons (inline SVG) ---------------- */
+  function icon(kind, cls) {
+    const c = 'class="w-icon' + (cls ? " " + cls : "") + '"';
+    const sun = '<circle cx="12" cy="12" r="4.2" fill="currentColor"/>';
+    const sunRays = '<g stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M4.8 4.8l1.7 1.7M17.5 17.5l1.7 1.7M19.2 4.8l-1.7 1.7M6.5 17.5l-1.7 1.7"/></g>';
+    const cloud = '<path d="M7.2 18.5a4.7 4.7 0 0 1 .9-9.3 5.5 5.5 0 0 1 10.4 2.5 3.6 3.6 0 0 1-.6 6.8z" fill="currentColor" opacity="0.85"/>';
+    const drops = '<g stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8.5 20.5l-1 1.6M12.5 20.5l-1 1.6M16.5 20.5l-1 1.6"/></g>';
+    const flakes = '<g fill="currentColor"><circle cx="8" cy="21" r="1.1"/><circle cx="12" cy="21" r="1.1"/><circle cx="16" cy="21" r="1.1"/></g>';
+    const bolt = '<path d="M12.5 15.5 10 20h2.2l-1.1 3.2 3.9-5.2h-2.3l1.6-2.5z" fill="currentColor"/>';
+    let body = "";
+    switch (kind) {
+      case "clear": body = sun + sunRays; break;
+      case "partly": body = '<circle cx="17" cy="7.5" r="3.4" fill="currentColor"/>' + sunRays.replace(/12/g, "17").replace(/2\.5/g, "0.8") + cloud; break;
+      case "cloudy": body = cloud; break;
+      case "fog": body = cloud + '<g stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity="0.7"><path d="M6 20.5h9M8.5 23h9"/></g>'; break;
+      case "drizzle": body = cloud + drops; break;
+      case "rain": body = cloud + drops; break;
+      case "snow": body = cloud + flakes; break;
+      case "storm": body = cloud + bolt; break;
+      default: body = cloud;
+    }
+    return '<svg viewBox="0 0 26 26" ' + c + ' aria-hidden="true">' + body + "</svg>";
+  }
+
+  /* ---------------- Helpers ---------------- */
+  function esc(s) {
+    var AMP = "&" + "amp;", LT = "&" + "lt;", GT = "&" + "gt;", QUOT = "&" + "quot;", APOS = "&" + "#39;";
+    return String(s).replace(/[&<>"']/g, function (ch) {
+      return { "&": AMP, "<": LT, ">": GT, '"': QUOT, "'": APOS }[ch];
+    });
+  }
+
+  function fmtTemp(c) {
+    if (c === null || c === undefined) return "–";
+    return units === "metric" ? Math.round(c) + "°" : Math.round(c * 9 / 5 + 32) + "°";
+  }
+  function fmtSpeed(kmh) {
+    if (kmh === null || kmh === undefined) return "–";
+    return units === "metric"
+      ? Math.round(kmh) + " km/h"
+      : Math.round(kmh * 0.621371) + " mph";
+  }
+
+  // Format an API local time string ("2026-10-16T17:30") in the location's own timezone.
+  function timeAt(apiTime, opts) {
+    // The API returns local times already — just render the HH:MM part.
+    const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(apiTime);
+    if (!m) return apiTime;
+    const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]));
+    return new Intl.DateTimeFormat("en-GB", {
+      timeZone: "UTC",
+      hour: "2-digit", minute: "2-digit",
+      ...opts
+    }).format(d);
+  }
+
+  function dayName(apiDate) {
+    const d = new Date(apiDate + "T12:00:00Z");
+    return new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "short" }).format(d);
+  }
+
+  function setStatus(msg, isError) {
+    statusEl.textContent = msg || "";
+    statusEl.classList.toggle("error", !!isError);
+  }
+
+  function applyTheme(kind) {
+    const dark = document.documentElement.getAttribute("data-theme") === "dark";
+    const t = (dark ? DARK_THEMES : THEMES)[kind] || THEMES.cloudy;
+    const root = document.documentElement;
+    root.style.setProperty("--hero-1", t[0]);
+    root.style.setProperty("--hero-2", t[1]);
+    root.style.setProperty("--hero-3", t[2]);
+  }
+
+  // System theme
+  (function () {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const set = () => document.documentElement.setAttribute("data-theme", mq.matches ? "dark" : "light");
+    set();
+    mq.addEventListener("change", () => { set(); if (selected) applyTheme(currentIconKind); });
+  })();
+  let currentIconKind = "cloudy";
+
+  /* ---------------- Data loading ---------------- */
+  async function loadWeather(place) {
+    const id = ++requestId;
+    selected = place;
+    $("current-content").hidden = true;
+    $("forecast-content").hidden = true;
+    $("empty-state").hidden = true;
+    $("forecast-empty").hidden = true;
+    $("initial-placeholder").hidden = false;
+    $("forecast-placeholder").hidden = false;
+    setStatus("Loading weather for " + place.name + "…");
+
+    const params = new URLSearchParams({
+      latitude: place.lat,
+      longitude: place.lon,
+      current: "temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day",
+      hourly: "temperature_2m,weather_code",
+      daily: "weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max",
+      timezone: "auto",
+      forecast_days: "7"
+    });
+
+    try {
+      const res = await fetch("https://api.open-meteo.com/v1/forecast?" + params);
+      if (!res.ok) throw new Error("Forecast service returned " + res.status);
+      const data = await res.json();
+      if (id !== requestId) return; // stale response
+      render(place, data);
+      setStatus("");
+    } catch (err) {
+      if (id !== requestId) return;
+      $("initial-placeholder").hidden = true;
+      $("forecast-placeholder").hidden = true;
+      $("empty-state").hidden = false;
+      $("forecast-empty").hidden = false;
+      setStatus("Could not load the forecast for " + place.name + ". Please try again.", true);
+    }
+  }
+
+  function render(place, data) {
+    const cur = data.current || {};
+    const code = describeCode(cur.weather_code);
+    currentIconKind = code.icon;
+    applyTheme(code.icon);
+
+    // ---- Current ----
+    const localTime = timeAt(cur.time || "", {});
+    const dayNames = data.daily && data.daily.time ? data.daily.time : [];
+
+    const html = [
+      '<div class="current-top">',
+      "  <div class='current-place'>",
+      "    <h1>" + esc(place.name) + "</h1>",
+      "    <span class='local-time'>" + esc(place.sub) + " · local time " + esc(localTime) + "</span>",
+      "  </div>",
+      '  <div class="current-icon">' + icon(code.icon) + "</div>",
+      "</div>",
+      '<div class="current-main">',
+      '  <div class="current-temp">' + fmtTemp(cur.temperature_2m) + "</div>",
+      '  <div class="current-desc">',
+      "    <span>" + esc(code.label) + "</span>",
+      '    <span class="feels">Feels like ' + fmtTemp(cur.apparent_temperature) + "</span>",
+      "  </div>",
+      "</div>",
+      '<div class="metrics">',
+      metric("Humidity", cur.relative_humidity_2m, "%"),
+      metric("Wind", fmtSpeed(cur.wind_speed_10m), ""),
+      metric("UV index", data.daily && data.daily.uv_index_max ? Math.round(data.daily.uv_index_max[0] * 10) / 10 : null, ""),
+      metric("Sunrise", timeAt((data.daily && data.daily.sunrise && data.daily.sunrise[0]) || "", {}), ""),
+      metric("Sunset", timeAt((data.daily && data.daily.sunset && data.daily.sunset[0]) || "", {}), ""),
+      "</div>"
+    ].join("\n");
+
+    $("current-content").innerHTML = html;
+    $("current-content").hidden = false;
+    $("initial-placeholder").hidden = true;
+
+    // ---- Hourly (next 24 h) ----
+    const hourly = data.hourly || { time: [], temperature_2m: [], weather_code: [] };
+    const nowIso = cur.time || "";
+    let startIdx = hourly.time.findIndex((t) => t >= nowIso);
+    if (startIdx < 0) startIdx = 0;
+
+    let hourlyHtml = '<h2 style="font-size:var(--text-lg)">Next 24 hours</h2><div class="hourly-scroll" role="list">';
+    // "Now" pill from current conditions, then the upcoming whole hours
+    hourlyHtml +=
+      '<div class="hour-item now" role="listitem">' +
+      '<span class="hour-time">Now</span>' +
+      icon(code.icon) +
+      '<span class="hour-temp">' + fmtTemp(cur.temperature_2m) + "</span>" +
+      "</div>";
+    for (let i = startIdx; i < Math.min(startIdx + 23, hourly.time.length); i++) {
+      const hc = describeCode(hourly.weather_code[i]);
+      hourlyHtml +=
+        '<div class="hour-item" role="listitem">' +
+        '<span class="hour-time">' + timeAt(hourly.time[i], { hour: "2-digit", minute: "2-digit" }) + "</span>" +
+        icon(hc.icon) +
+        '<span class="hour-temp">' + fmtTemp(hourly.temperature_2m[i]) + "</span>" +
+        "</div>";
+    }
+    hourlyHtml += "</div>";
+
+    // ---- Daily ----
+    const daily = data.daily || { time: [], temperature_2m_max: [], temperature_2m_min: [], weather_code: [] };
+    const allMin = Math.min(...daily.temperature_2m_min.filter((v) => v !== null), 0);
+    const allMax = Math.max(...daily.temperature_2m_max.filter((v) => v !== null), 1);
+    const span = allMax - allMin || 1;
+
+    let dailyHtml = '<h2 style="font-size:var(--text-lg)">7-day forecast</h2><div class="daily">';
+    daily.time.slice(0, 7).forEach((date, i) => {
+      const dcode = describeCode(daily.weather_code[i]);
+      const min = daily.temperature_2m_min[i], max = daily.temperature_2m_max[i];
+      const left = ((min - allMin) / span) * 100;
+      const width = Math.max(((max - min) / span) * 100, 8);
+      const today = i === 0;
+      dailyHtml +=
+        '<div class="day-row">' +
+        '<span class="day-name">' + (today ? "Today" : dayName(date)) + "</span>" +
+        icon(dcode.icon) +
+        '<div class="temp-track"><div class="temp-fill" style="left:' + left.toFixed(1) + "%;width:" + width.toFixed(1) + '%"></div></div>' +
+        '<div class="day-temps"><span>' + fmtTemp(max) + ' <span class="min">' + fmtTemp(min) + "</span></span></div>" +
+        "</div>";
+    });
+    dailyHtml += "</div>";
+
+    $("forecast-content").innerHTML = hourlyHtml + dailyHtml;
+    $("forecast-content").hidden = false;
+    $("forecast-placeholder").hidden = true;
+  }
+
+  function metric(label, value, unit) {
+    const v = value === null || value === undefined ? "–" : value;
+    return (
+      '<div class="metric"><span class="metric-label">' + label + "</span>" +
+      '<span class="metric-value">' + v + (unit ? "<small>" + unit + "</small>" : "") + "</span></div>"
+    );
+  }
+
+  /* ---------------- Geolocation ---------------- */
+  $("locate-btn").addEventListener("click", () => {
+    if (!navigator.geolocation) {
+      setStatus("Geolocation is not supported by this browser — search for a city instead.", true);
+      return;
+    }
+    setStatus("Locating…");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const p = {
+          name: "Current location",
+          sub: pos.coords.latitude.toFixed(2) + "°, " + pos.coords.longitude.toFixed(2) + "°",
+          lat: pos.coords.latitude.toFixed(4),
+          lon: pos.coords.longitude.toFixed(4)
+        };
+        loadWeather(p);
+      },
+      (err) => {
+        const msgs = {
+          1: "Location permission was denied — search for a city instead.",
+          2: "Your location could not be determined — try searching for a city.",
+          3: "Locating took too long — please try again."
+        };
+        setStatus(msgs[err.code] || "Location unavailable — search for a city instead.", true);
+      },
+      { timeout: 10000, maximumAge: 300000 }
+    );
+  });
+
+  /* ---------------- City search ---------------- */
+  async function searchCities(q) {
+    const seq = ++suggestionSeq;
+    if (!q || q.trim().length < 2) { closeSuggestions(); return; }
+    try {
+      const url = "https://geocoding-api.open-meteo.com/v1/search?name=" +
+        encodeURIComponent(q.trim()) + "&count=8&language=en&format=json";
+      const res = await fetch(url);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      if (seq !== suggestionSeq) return; // stale
+      showSuggestions(data.results || []);
+    } catch {
+      if (seq === suggestionSeq) closeSuggestions();
+    }
+  }
+
+  function showSuggestions(results) {
+    if (!results.length) {
+      closeSuggestions();
+      setStatus("No cities matched your search.", true);
+      return;
+    }
+    suggestionsEl.innerHTML = results.map((r, i) => {
+      const sub = [r.admin1, r.country].filter(Boolean).join(", ");
+      return (
+        '<li role="option"><button type="button" data-i="' + i + '">' +
+        '<span>' + esc(r.name) + "</span>" +
+        '<span class="place-sub">' + esc(sub || "—") + "</span></button></li>"
+      );
+    }).join("");
+    suggestionsEl._results = results;
+    suggestionsEl.classList.add("open");
+    input.setAttribute("aria-expanded", "true");
+  }
+
+  function closeSuggestions() {
+    suggestionsEl.classList.remove("open");
+    input.setAttribute("aria-expanded", "false");
+  }
+
+  suggestionsEl.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-i]");
+    if (!btn || !suggestionsEl._results) return;
+    const r = suggestionsEl._results[+btn.dataset.i];
+    input.value = r.name;
+    closeSuggestions();
+    const sub = [r.admin1, r.country].filter(Boolean).join(", ");
+    loadWeather({ name: r.name, sub: sub, lat: String(r.latitude), lon: String(r.longitude) });
+  });
+
+  input.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => searchCities(input.value), 300);
+  });
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeSuggestions();
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".search-box")) closeSuggestions();
+  });
+
+  /* ---------------- Unit toggle ---------------- */
+  function setUnits(u) {
+    units = u;
+    $("unit-c").setAttribute("aria-pressed", u === "metric" ? "true" : "false");
+    $("unit-f").setAttribute("aria-pressed", u === "imperial" ? "true" : "false");
+    if (selected) loadWeather(selected);
+  }
+  $("unit-c").addEventListener("click", () => setUnits("metric"));
+  $("unit-f").addEventListener("click", () => setUnits("imperial"));
+})();
+</script>
+<script data-pplx-inline-edit>
+(function () {
+  if (window === window.top) return;
+
+  const allowedParentOrigins = ["https://www.perplexity.ai","https://perplexity.ai","https://testing.perplexity.ai","https://staging.perplexity.ai","https://*.preview.i.perplexity.ai","http://perplexity.localhost","http://localhost:1420","http://127.0.0.1:1420","http://localhost:3000","http://127.0.0.1:3000","http://localhost:5173","http://127.0.0.1:5173"];
+  const MAX_FONT_BYTES = 500 * 1024;
+  const MAX_TOTAL_FONT_BYTES = 2 * 1024 * 1024;
+  const DEFAULT_LINE_HEIGHT = 16;
+  let scrollForwarding = false;
+  let scrollRaf = 0;
+  let trustedTopOrigin = null;
+
+  // Allow entries like "https://*.preview.i.perplexity.ai" — the wildcard
+  // matches a single DNS label (no dots), so "https://*.foo" cannot stretch
+  // across multiple labels.
+  function matchesAllowedOrigin(origin) {
+    if (!origin) return false;
+    for (const entry of allowedParentOrigins) {
+      if (!entry.includes("*")) {
+        if (entry === origin) return true;
+        continue;
+      }
+      const pattern = new RegExp(
+        "^" +
+          entry.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^.]+") +
+          "$",
+      );
+      if (pattern.test(origin)) return true;
+    }
+    return false;
+  }
+
+  // Trust decision: when the sender is same-origin-visible (event.origin is a
+  // real origin like https://www.perplexity.ai) we trust event.origin directly.
+  // When event.origin is "null" (opaque broker srcdoc), we fall back to the
+  // broker's stamped `parentOrigin` to identify the top window. The fallback
+  // is claim-only — we rely on the browser's native `targetOrigin` enforcement
+  // on the response path (see postToTrustedTop) to ensure replies can't be
+  // delivered to anyone but the actual top window of that claimed origin.
+  function getTrustedParentOrigin(event) {
+    const forwardedParentOrigin =
+      typeof event.data.parentOrigin === "string" ? event.data.parentOrigin : null;
+    const parentOrigin = event.origin === "null" ? forwardedParentOrigin : event.origin;
+    return matchesAllowedOrigin(parentOrigin) ? parentOrigin : null;
+  }
+
+  // All responses go to window.top with targetOrigin = the allowlisted origin.
+  // An attacker that iframes us inside their own null-origin broker can claim
+  // any parentOrigin they like, but the browser will drop the reply whenever
+  // the real top's origin doesn't match — so the screenshot never leaves.
+  function postToTrustedTop(message) {
+    if (!trustedTopOrigin) return;
+    try {
+      window.top.postMessage(message, trustedTopOrigin);
+    } catch (_error) {}
+  }
+
+  const PICK_CAPABILITIES = ["pick"];
+  const PICK_CHAIN_LENGTH = 4;
+  const PICK_MAX_TEXT_CHARS = 120;
+  const PICK_MAX_HTML_CHARS = 300;
+
+  function truncate(value, maxChars) {
+    return value.length > maxChars ? value.slice(0, maxChars - 1) + "…" : value;
+  }
+
+  function isPickableElement(element) {
+    return (
+      element instanceof Element &&
+      element !== document.documentElement &&
+      element !== document.body
+    );
+  }
+
+  function resolvePickTarget(x, y) {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    const element = document.elementFromPoint(x, y);
+    return isPickableElement(element) ? element.closest("svg") || element : null;
+  }
+
+  function pickLabel(element) {
+    if (element.id) return element.localName + "#" + element.id;
+    return [element.localName].concat(Array.from(element.classList).slice(0, 2)).join(".");
+  }
+
+  // Only attributes that help find the element in source. data-* values and URL
+  // query strings or fragments can carry tokens.
+  const PICK_ATTRIBUTES = new Set([
+    "id",
+    "class",
+    "name",
+    "type",
+    "role",
+    "alt",
+    "aria-label",
+    "href",
+    "src",
+  ]);
+
+  function pickAttributeValue(attribute) {
+    return attribute.name === "href" || attribute.name === "src"
+      ? attribute.value.split(/[?#]/)[0]
+      : attribute.value;
+  }
+
+  function describePickElement(element) {
+    const chain = [];
+    for (
+      let current = element;
+      isPickableElement(current) && chain.length < PICK_CHAIN_LENGTH;
+      current = current.parentElement
+    ) {
+      chain.unshift(current);
+    }
+    const attributes = Array.from(element.attributes)
+      .filter((attribute) => PICK_ATTRIBUTES.has(attribute.name))
+      .map((attribute) => ` ${attribute.name}="${pickAttributeValue(attribute).replace(/"/g, "&quot;")}"`)
+      .join("");
+    const text = (element.innerText || element.textContent || "").replace(/\s+/g, " ").trim();
+    return {
+      chain: chain.map(pickLabel),
+      html: truncate(`<${element.localName}${attributes}>`, PICK_MAX_HTML_CHARS),
+      text: text ? truncate(text, PICK_MAX_TEXT_CHARS) : undefined,
+    };
+  }
+
+  // Hover asks once per frame, and innerText on a large section forces layout,
+  // so only the rect is re-read while the pointer stays on the same element.
+  // Clicks ask for fresh details since the page may have changed the element.
+  let lastPick = null;
+
+  function describePickTarget(element, fresh) {
+    if (fresh || lastPick?.element !== element) {
+      lastPick = { element, details: describePickElement(element) };
+    }
+    const rect = element.getBoundingClientRect();
+    return {
+      rect: { x: rect.left, y: rect.top, width: rect.width, height: rect.height },
+      ...lastPick.details,
+    };
+  }
+
+  function inlineAll(original, clone) {
+    if (original.nodeType !== 1 || clone.nodeType !== 1) return;
+
+    try {
+      const computedStyle = getComputedStyle(original);
+      // cssText on a computed style is the serialized declaration in modern
+      // Chromium/Safari — a single read beats enumerating ~400 longhand
+      // properties. Firefox returns "" here, so we fall back on empty.
+      const serialized = computedStyle.cssText;
+      if (serialized) {
+        clone.style.cssText = serialized;
+      } else {
+        const parts = new Array(computedStyle.length);
+        for (let index = 0; index < computedStyle.length; index += 1) {
+          const property = computedStyle[index];
+          parts[index] = `${property}:${computedStyle.getPropertyValue(property)};`;
+        }
+        clone.style.cssText = parts.join("");
+      }
+    } catch (_error) {}
+
+    const originalChildren = original.children;
+    const clonedChildren = clone.children;
+    for (
+      let index = 0;
+      index < originalChildren.length && index < clonedChildren.length;
+      index += 1
+    ) {
+      inlineAll(originalChildren[index], clonedChildren[index]);
+    }
+  }
+
+  function extractFontUrl(srcValue) {
+    const matches = [
+      ...srcValue.matchAll(
+        /url\(["']?([^"')]+)["']?\)(?:\s*format\(["']?([^"')]+)["']?\))?/gi,
+      ),
+    ];
+    if (matches.length === 0) return null;
+    const woff2 = matches.find((m) => m[2] && m[2].toLowerCase().includes("woff2"));
+    if (woff2) return woff2[1];
+    const woff = matches.find((m) => m[2] && m[2].toLowerCase().includes("woff"));
+    if (woff) return woff[1];
+    return matches[0][1];
+  }
+
+  // Cache resolved font URL -> data URI across captures. Fonts on a page
+  // essentially never change, and a batch run emits multiple captures back to
+  // back — without this we'd refetch + re-base64 every time.
+  const fontDataUriCache = new Map();
+  const SRC_DECLARATION_RE = /src\s*:\s*[^;}]+/i;
+
+  async function fetchAsDataUri(url) {
+    if (fontDataUriCache.has(url)) return fontDataUriCache.get(url);
+    let dataUri = null;
+    try {
+      const response = await fetch(url, { mode: "cors", credentials: "omit" });
+      if (response.ok) {
+        const blob = await response.blob();
+        if (blob.size <= MAX_FONT_BYTES) {
+          dataUri = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () =>
+              resolve(typeof reader.result === "string" ? reader.result : null);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+          });
+        }
+      }
+    } catch (_error) {
+      dataUri = null;
+    }
+    fontDataUriCache.set(url, dataUri);
+    return dataUri;
+  }
+
+  function collectFontFaceRuleTexts() {
+    const rules = [];
+    for (const sheet of document.styleSheets) {
+      let cssRules;
+      try {
+        cssRules = sheet.cssRules;
+      } catch (_error) {
+        continue;
+      }
+      if (!cssRules) continue;
+      for (const rule of cssRules) {
+        const cssText = rule.cssText || "";
+        if (cssText.startsWith("@font-face")) rules.push(cssText);
+      }
+    }
+    return rules;
+  }
+
+  async function buildInlinedFontCss() {
+    const ruleTexts = collectFontFaceRuleTexts();
+    if (ruleTexts.length === 0) return null;
+
+    const resolved = ruleTexts.map((cssText) => {
+      if (!SRC_DECLARATION_RE.test(cssText)) return null;
+      const srcMatch = cssText.match(/src\s*:\s*([^;}]+)[;}]/i);
+      if (!srcMatch) return null;
+      const url = extractFontUrl(srcMatch[1]);
+      if (!url) return null;
+      try {
+        return { cssText, url: new URL(url, document.baseURI).href };
+      } catch (_error) {
+        return null;
+      }
+    });
+
+    const dataUris = await Promise.all(
+      resolved.map((entry) => (entry ? fetchAsDataUri(entry.url) : Promise.resolve(null))),
+    );
+
+    const inlined = [];
+    let totalBytes = 0;
+    for (let index = 0; index < resolved.length; index += 1) {
+      const entry = resolved[index];
+      const dataUri = dataUris[index];
+      if (!entry || !dataUri) continue;
+      const approxBytes = dataUri.length * 0.75;
+      if (totalBytes + approxBytes > MAX_TOTAL_FONT_BYTES) break;
+      totalBytes += approxBytes;
+      inlined.push(entry.cssText.replace(SRC_DECLARATION_RE, `src: url("${dataUri}")`));
+    }
+    return inlined.length > 0 ? inlined.join("\n") : null;
+  }
+
+  function stripExternal(clone) {
+    const images = clone.querySelectorAll("img");
+    for (let index = 0; index < images.length; index += 1) {
+      const src = images[index].getAttribute("src");
+      if (src && !src.startsWith("data:")) images[index].removeAttribute("src");
+    }
+
+    const elements = clone.querySelectorAll("*");
+    for (let index = 0; index < elements.length; index += 1) {
+      const style = elements[index].style.cssText;
+      if (style && style.includes("url(")) {
+        elements[index].style.cssText = style.replace(
+          /url\(["']?(?!data:)[^)"']*["']?\)/gi,
+          "none",
+        );
+      }
+    }
+  }
+
+  function emitScroll() {
+    scrollRaf = 0;
+    if (!scrollForwarding) return;
+    postToTrustedTop({
+      type: "INLINE_EDIT_SCROLL",
+      scrollX: window.scrollX,
+      scrollY: window.scrollY,
+      capabilities: PICK_CAPABILITIES,
+    });
+  }
+
+  window.addEventListener(
+    "scroll",
+    function () {
+      if (!scrollForwarding || scrollRaf) return;
+      scrollRaf = requestAnimationFrame(emitScroll);
+    },
+    { passive: true, capture: true },
+  );
+
+  async function handleCaptureRequest(event) {
+    const requestId = event.data.requestId;
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    function postResult(dataUrl) {
+      postToTrustedTop({
+        type: "INLINE_EDIT_SCREENSHOT_RESULT",
+        requestId,
+        dataUrl,
+        scrollX,
+        scrollY,
+      });
+    }
+
+    try {
+      // Wait for any pending web fonts to resolve so both inline metrics and
+      // the @font-face inlining below see the same loaded faces.
+      if (document.fonts && document.fonts.ready) {
+        try {
+          await document.fonts.ready;
+        } catch (_error) {}
+      }
+
+      const clone = document.documentElement.cloneNode(true);
+      inlineAll(document.documentElement, clone);
+
+      const removedNodes = clone.querySelectorAll("script,link[rel=\"stylesheet\"],style");
+      for (let index = 0; index < removedNodes.length; index += 1) {
+        removedNodes[index].remove();
+      }
+
+      stripExternal(clone);
+
+      // Re-embed web fonts as data-URI @font-face rules so the SVG rasterizer
+      // can resolve them — external font URLs aren't fetched during
+      // foreignObject rendering, which would otherwise force a fallback face
+      // and change text metrics.
+      const inlinedFontCss = await buildInlinedFontCss();
+      if (inlinedFontCss) {
+        const styleEl = document.createElement("style");
+        styleEl.textContent = inlinedFontCss;
+        const head = clone.querySelector("head");
+        if (head) head.appendChild(styleEl);
+        else clone.insertBefore(styleEl, clone.firstChild);
+      }
+
+      const html = new XMLSerializer().serializeToString(clone);
+      const svg =
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
+        '<foreignObject width="100%" height="100%">' +
+        `<div xmlns="http://www.w3.org/1999/xhtml" style="width:${width}px;height:${height}px;overflow:hidden">` +
+        `<div style="position:relative;left:-${scrollX}px;top:-${scrollY}px">` +
+        html +
+        "</div></div></foreignObject></svg>";
+      const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+      const image = new Image();
+      image.onload = function () {
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(image, 0, 0);
+        postResult(canvas.toDataURL("image/png"));
+      };
+      image.onerror = function () {
+        postResult(null);
+      };
+      image.src = svgUrl;
+    } catch (_error) {
+      postResult(null);
+    }
+  }
+
+  window.addEventListener("message", function (event) {
+    if (!event.data) return;
+    // Only accept messages from the direct parent frame. Blocks sibling /
+    // unrelated-window postMessage senders that could otherwise reach us.
+    if (event.source !== window.parent) return;
+
+    const trustedParentOrigin = getTrustedParentOrigin(event);
+    if (!trustedParentOrigin) return;
+    trustedTopOrigin = trustedParentOrigin;
+
+    if (event.data.type === "INLINE_EDIT_PICK") {
+      const element = resolvePickTarget(event.data.x, event.data.y);
+      postToTrustedTop({
+        type: "INLINE_EDIT_PICK_RESULT",
+        seq: event.data.seq,
+        target: element ? describePickTarget(element, event.data.fresh === true) : null,
+      });
+      return;
+    }
+
+    if (event.data.type === "INLINE_EDIT_SCROLL_START") {
+      scrollForwarding = true;
+      emitScroll();
+      return;
+    }
+
+    if (event.data.type === "INLINE_EDIT_SCROLL_STOP") {
+      scrollForwarding = false;
+      if (scrollRaf) cancelAnimationFrame(scrollRaf);
+      scrollRaf = 0;
+      return;
+    }
+
+    if (event.data.type === "INLINE_EDIT_SCROLL_BY") {
+      const { deltaX, deltaY, deltaMode } = event.data;
+      if (!scrollForwarding || !Number.isFinite(deltaX) || !Number.isFinite(deltaY)) return;
+      if (deltaMode !== 0 && deltaMode !== 1 && deltaMode !== 2) return;
+      const lineHeight =
+        parseFloat(getComputedStyle(document.documentElement).lineHeight) || DEFAULT_LINE_HEIGHT;
+      const scaleX = deltaMode === 1 ? lineHeight : deltaMode === 2 ? window.innerWidth : 1;
+      const scaleY = deltaMode === 1 ? lineHeight : deltaMode === 2 ? window.innerHeight : 1;
+      // The selection overlay receives the wheel event instead of this iframe.
+      // Instant scrolling preserves trackpad deltas even on smooth-scroll sites.
+      window.scrollBy({ left: deltaX * scaleX, top: deltaY * scaleY, behavior: "instant" });
+      emitScroll();
+      return;
+    }
+
+    if (event.data.type !== "INLINE_EDIT_CAPTURE_REQUEST") return;
+
+    handleCaptureRequest(event);
+  });
+})();
+
+
+</script></body>
+</html>
